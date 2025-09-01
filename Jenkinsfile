@@ -7,7 +7,8 @@ def cred = "batch24ssh"
 pipeline {
     agent any
     stages {
-        stage('repo pull') {
+
+        stage('Repo Pull') {
             steps {
                 sshagent([cred]) {
                     sh """
@@ -21,7 +22,24 @@ pipeline {
             }
         }
 
-        stage('docker build') {
+        stage('Docker Clean') {
+            steps {
+                sshagent([cred]) {
+                    sh """
+                    ssh -o StrictHostKeyChecking=no ${server} << EOF
+                    echo "Menghapus container lama (backend)..."
+                    docker rm -f backend || true
+
+                    echo "Menghapus image lama (dumbflix-be)..."
+                    docker rmi -f dumbflix-be || true
+                    exit
+                    EOF
+                    """
+                }
+            }
+        }
+
+        stage('Docker Build') {
             steps {
                 sshagent([cred]) {
                     sh """
@@ -35,7 +53,7 @@ pipeline {
             }
         }
 
-        stage('docker run') {
+        stage('Docker Run') {
             steps {
                 sshagent([cred]) {
                     sh """
